@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { keccak256, recoverAddress } from "ethers";
 import { KeyManagementServiceClient } from "@google-cloud/kms";
 import * as asn1 from "asn1.js";
 import BN from "bn.js";
@@ -84,7 +84,7 @@ export function getEthereumAddress(publicKey: Buffer): string {
   const pubFormatted = pubKeyBuffer.slice(1, pubKeyBuffer.length);
 
   // keccak256 hash of publicKey
-  const address = ethers.utils.keccak256(pubFormatted);
+  const address = keccak256(pubFormatted);
   // take last 20 bytes as ethereum address
   const EthAddr = `0x${address.slice(-40)}`;
   return EthAddr;
@@ -112,7 +112,7 @@ export async function requestKmsSignature(plaintext: Buffer, kmsCredentials: Gcp
 }
 
 function recoverPubKeyFromSig(msg: Buffer, r: BN, s: BN, v: number) {
-  return ethers.utils.recoverAddress(`0x${msg.toString("hex")}`, {
+  return recoverAddress(`0x${msg.toString("hex")}`, {
     r: `0x${r.toString("hex")}`,
     s: `0x${s.toString("hex")}`,
     v,
