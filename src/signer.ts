@@ -126,9 +126,11 @@ export class GcpKmsSigner extends AbstractSigner {
 
   async signTransaction(transaction: Deferrable<TransactionRequest>): Promise<string> {
     const unsignedTx = await resolveProperties(transaction);
-    const serializedTx = Transaction.from(<TransactionLike>unsignedTx).unsignedSerialized;
+    const trans: Transaction = Transaction.from(<TransactionLike>unsignedTx);
+    const serializedTx = trans.unsignedSerialized;
     const transactionSignature = await this._signDigest(keccak256(serializedTx));
-    return Transaction.from(transactionSignature).serialized;
+    trans.signature = Signature.from(transactionSignature);
+    return trans.serialized;
   }
 
   connect(provider: Provider): GcpKmsSigner {
