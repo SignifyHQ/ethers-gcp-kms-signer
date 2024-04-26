@@ -18,7 +18,6 @@ import {
   defineProperties,
   getBytes,
   hashMessage,
-  resolveProperties,
   keccak256,
 } from "ethers";
 import { bufferToHex } from "ethereumjs-util";
@@ -26,10 +25,6 @@ import { getPublicKey, getEthereumAddress, requestKmsSignature, determineCorrect
 import { validateVersion } from "./util/signature-utils";
 
 configs.config();
-
-type Deferrable<T> = {
-  [K in keyof T]: T[K] | Promise<T[K]>;
-};
 
 export const TypedDataVersion = SignTypedDataVersion;
 
@@ -124,9 +119,8 @@ export class GcpKmsSigner extends AbstractSigner {
     return messageSignature;
   }
 
-  async signTransaction(transaction: Deferrable<TransactionRequest>): Promise<string> {
-    const unsignedTx = await resolveProperties(transaction);
-    const trans: Transaction = Transaction.from(<TransactionLike>unsignedTx);
+  async signTransaction(transaction: TransactionRequest): Promise<string> {
+    const trans: Transaction = Transaction.from(<TransactionLike>transaction);
     const serializedTx = trans.unsignedSerialized;
     const transactionSignature = await this._signDigest(keccak256(serializedTx));
     trans.signature = Signature.from(transactionSignature);

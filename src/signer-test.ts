@@ -19,7 +19,6 @@ import {
   defineProperties,
   getBytes,
   hashMessage,
-  resolveProperties,
   keccak256,
   Wallet,
   SigningKey,
@@ -27,13 +26,8 @@ import {
 import { bufferToHex } from "ethereumjs-util";
 import { getPublicKey, getEthereumAddress, requestKmsSignature, determineCorrectV } from "./util/gcp-kms-utils";
 import { validateVersion } from "./util/signature-utils";
-import { wallet, signingKey } from "./util/test-helper";
 
 configs.config();
-
-type Deferrable<T> = {
-  [K in keyof T]: T[K] | Promise<T[K]>;
-};
 
 export const TypedDataVersion = SignTypedDataVersion;
 
@@ -76,9 +70,6 @@ export class TestGcpKmsSigner extends AbstractSigner {
     let sig = { r: new BN(0), s: new BN(0) };
     if (this.privateKey) {
       const { r, s, v } = new SigningKey(this.privateKey).sign(digestBuffer);
-      console.log(`sig.r: ${r}`);
-      console.log(`sig.s: ${s}`);
-      console.log(`sig.v: ${v}`);
       sig.r = new BN(getBytes(r, "hex"));
       sig.s = new BN(getBytes(s, "hex"));
     } else {
@@ -86,7 +77,6 @@ export class TestGcpKmsSigner extends AbstractSigner {
     }
     const ethAddr = await this.getAddress();
     const { v } = determineCorrectV(digestBuffer, sig.r, sig.s, ethAddr);
-    console.log(`v: ${v}`);
     return Signature.from({
       v,
       r: `0x${sig.r.toString("hex")}`,
@@ -146,9 +136,8 @@ export class TestGcpKmsSigner extends AbstractSigner {
     return messageSignature;
   }
 
-  async signTransaction(transaction: Deferrable<TransactionRequest>): Promise<string> {
-    const unsignedTx = await resolveProperties(transaction);
-    const trans: Transaction = Transaction.from(<TransactionLike>unsignedTx);
+  async signTransaction(transaction: TransactionRequest): Promise<string> {
+    const trans: Transaction = Transaction.from(<TransactionLike>transaction);
     const serializedTx = trans.unsignedSerialized;
     const transactionSignature = await this._signDigest(keccak256(serializedTx));
     trans.signature = Signature.from(transactionSignature);
