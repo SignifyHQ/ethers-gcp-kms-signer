@@ -1,6 +1,6 @@
 import configs from "dotenv";
 import { JsonRpcProvider, Contract } from "ethers";
-import { GcpKmsSignerCredentials, TestGcpKmsSigner } from "../signer-test";
+import { GcpKmsSignerCredentials, TestGcpKmsSigner } from "../index";
 import BN from "bn.js";
 
 configs.config();

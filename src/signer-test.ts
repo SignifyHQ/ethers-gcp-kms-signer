@@ -29,9 +29,7 @@ import { validateVersion } from "./util/signature-utils";
 
 configs.config();
 
-export const TypedDataVersion = SignTypedDataVersion;
-
-export interface GcpKmsSignerCredentials {
+interface GcpKmsSignerCredentials {
   projectId: string;
   locationId: string;
   keyRingId: string;
