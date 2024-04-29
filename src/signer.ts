@@ -8,7 +8,18 @@ import {
   TypedDataUtils,
 } from "@metamask/eth-sig-util";
 
-import { ethers, UnsignedTransaction } from "ethers";
+import {
+  Provider,
+  AbstractSigner,
+  Transaction,
+  Signature,
+  TransactionRequest,
+  TransactionLike,
+  defineProperties,
+  getBytes,
+  hashMessage,
+  keccak256,
+} from "ethers";
 import { bufferToHex } from "ethereumjs-util";
 import { getPublicKey, getEthereumAddress, requestKmsSignature, determineCorrectV } from "./util/gcp-kms-utils";
 import { validateVersion } from "./util/signature-utils";
@@ -25,15 +36,15 @@ export interface GcpKmsSignerCredentials {
   keyVersion: string;
 }
 
-export class GcpKmsSigner extends ethers.Signer {
+export class GcpKmsSigner extends AbstractSigner {
   kmsCredentials: GcpKmsSignerCredentials;
 
   ethereumAddress: string;
 
-  constructor(kmsCredentials: GcpKmsSignerCredentials, provider?: ethers.providers.Provider) {
-    super();
-    ethers.utils.defineReadOnly(this, "provider", provider || null);
-    ethers.utils.defineReadOnly(this, "kmsCredentials", kmsCredentials);
+  constructor(kmsCredentials: GcpKmsSignerCredentials, provider?: Provider) {
+    super(provider);
+    defineProperties<GcpKmsSigner>(this, { provider: provider || null });
+    defineProperties<GcpKmsSigner>(this, { kmsCredentials });
   }
 
   async getAddress(): Promise<string> {
@@ -45,19 +56,19 @@ export class GcpKmsSigner extends ethers.Signer {
   }
 
   async _signDigest(digestString: string): Promise<string> {
-    const digestBuffer = Buffer.from(ethers.utils.arrayify(digestString));
+    const digestBuffer = Buffer.from(getBytes(digestString));
     const sig = await requestKmsSignature(digestBuffer, this.kmsCredentials);
     const ethAddr = await this.getAddress();
     const { v } = determineCorrectV(digestBuffer, sig.r, sig.s, ethAddr);
-    return ethers.utils.joinSignature({
+    return Signature.from({
       v,
       r: `0x${sig.r.toString("hex")}`,
       s: `0x${sig.s.toString("hex")}`,
-    });
+    }).serialized;
   }
 
-  async signMessage(message: string | ethers.utils.Bytes): Promise<string> {
-    return this._signDigest(ethers.utils.hashMessage(message));
+  async signMessage(message: string | Uint8Array): Promise<string> {
+    return this._signDigest(hashMessage(message));
   }
 
   /**
@@ -108,14 +119,15 @@ export class GcpKmsSigner extends ethers.Signer {
     return messageSignature;
   }
 
-  async signTransaction(transaction: ethers.utils.Deferrable<ethers.providers.TransactionRequest>): Promise<string> {
-    const unsignedTx = await ethers.utils.resolveProperties(transaction);
-    const serializedTx = ethers.utils.serializeTransaction(<UnsignedTransaction>unsignedTx);
-    const transactionSignature = await this._signDigest(ethers.utils.keccak256(serializedTx));
-    return ethers.utils.serializeTransaction(<UnsignedTransaction>unsignedTx, transactionSignature);
+  async signTransaction(transaction: TransactionRequest): Promise<string> {
+    const trans: Transaction = Transaction.from(<TransactionLike>transaction);
+    const serializedTx = trans.unsignedSerialized;
+    const transactionSignature = await this._signDigest(keccak256(serializedTx));
+    trans.signature = Signature.from(transactionSignature);
+    return trans.serialized;
   }
 
-  connect(provider: ethers.providers.Provider): GcpKmsSigner {
+  connect(provider: Provider): GcpKmsSigner {
     return new GcpKmsSigner(this.kmsCredentials, provider);
   }
 }
