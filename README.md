@@ -1,11 +1,11 @@
 # ethers-gcp-kms-signer
 
-This is a wallet or signer that can be used together with [Ethers.js](https://github.com/ethers-io/ethers.js/) applications.
+This is a forked repo from [openlawteam/ethers-gcp-kms-signer](https://github.com/openlawteam/ethers-gcp-kms-signer) that handle a wallet or signer that can be used together with [Ethers.js](https://github.com/ethers-io/ethers.js/) applications.
 
 ## Getting Started
 
 ```sh
-npm i ethers-gcp-kms-signer
+npm i github:SignifyHQ/ethers-gcp-kms-signer#feature/upgrade-ethers-test
 ```
 
 1. Create your asymmetric key as follows: https://cloud.google.com/kms/docs/creating-asymmetric-keys with  `EC_SIGN_SECP256K1_SHA256` algorithm.
@@ -27,9 +27,8 @@ const kmsCredentials = {
   keyVersion: "1", // the version of the key
 };
 
-const provider = ethers.providers.getDefaultProvider("ropsten");
-let signer = new GcpKmsSigner(kmsCredentials);
-signer = signer.connect(provider);
+const provider = ethers.providers.getDefaultProvider("sepolia");
+let signer = new GcpKmsSigner(kmsCredentials, provider);
 
 const tx = await signer.sendTransaction({
   to: "0xE94E130546485b928C9C9b9A5e69EB787172952e",
@@ -45,7 +44,7 @@ console.log(tx);
 `git clone` this repo
 
 ```sh
-$ git clone https://github.com/openlawteam/ethers-gcp-kms-signer my-module
+$ git clone https://github.com/SignifyHQ/ethers-gcp-kms-signer my-module
 $ cd my-module
 $ rm -rf .git
 $ npm install # or yarn
