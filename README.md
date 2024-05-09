@@ -5,7 +5,7 @@ This is a wallet or signer that can be used together with [Ethers.js](https://gi
 ## Getting Started
 
 ```sh
-npm i ethers-gcp-kms-signer
+npm i github:SignifyHQ/ethers-gcp-kms-signer
 ```
 
 1. Create your asymmetric key as follows: https://cloud.google.com/kms/docs/creating-asymmetric-keys with  `EC_SIGN_SECP256K1_SHA256` algorithm.
