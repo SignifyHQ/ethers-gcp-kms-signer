@@ -4,6 +4,7 @@ import * as asn1 from "asn1.js";
 import BN from "bn.js";
 import KeyEncoder from "key-encoder";
 import { GcpKmsSignerCredentials } from "../signer";
+import { kmsSignerClientConfigOpts } from "./config";
 
 const keyEncoder = new KeyEncoder("secp256k1");
 
@@ -33,7 +34,7 @@ function getClientCredentials() {
 }
 
 export async function sign(digest: Buffer, kmsCredentials: GcpKmsSignerCredentials) {
-  const kms = new KeyManagementServiceClient(getClientCredentials());
+  const kms = new KeyManagementServiceClient({...getClientCredentials(), ...kmsSignerClientConfigOpts});
   const versionName = kms.cryptoKeyVersionPath(
     kmsCredentials.projectId,
     kmsCredentials.locationId,
@@ -51,7 +52,7 @@ export async function sign(digest: Buffer, kmsCredentials: GcpKmsSignerCredentia
 }
 
 export const getPublicKey = async (kmsCredentials: GcpKmsSignerCredentials) => {
-  const kms = new KeyManagementServiceClient(getClientCredentials());
+  const kms = new KeyManagementServiceClient({...getClientCredentials(), ...kmsSignerClientConfigOpts});
   const versionName = kms.cryptoKeyVersionPath(
     kmsCredentials.projectId,
     kmsCredentials.locationId,
